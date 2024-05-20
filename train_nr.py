@@ -54,7 +54,8 @@ def train_nr_model(opts):
     mean = torch.from_numpy(mean).to(device).to(torch.float32)
     std = torch.from_numpy(std).to(device).to(torch.float32)
 
-    wandb.init(project=opts.wandb_project_name, config=opts)
+    run = wandb.init(project=opts.wandb_project_name, config=opts)
+    
 
     for epoch in range(opts.init_epoch, opts.n_epochs):
 
@@ -191,6 +192,11 @@ def train_nr_model(opts):
                 torch.save(neural_rasterizer.module.state_dict(), model_fpath)
             else:
                 torch.save(neural_rasterizer.state_dict(), model_fpath)
+
+            artifact = wandb.Artifact('model', type='model')
+            artifact.add_file(model_fpath)
+            run.log_artifact(artifact)
+
                 
     logfile.close()
     val_logfile.close()

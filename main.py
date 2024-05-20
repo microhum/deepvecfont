@@ -65,7 +65,7 @@ def train_main_model(opts):
     neural_rasterizer.load_state_dict(torch.load(neural_rasterizer_fpath))
     neural_rasterizer.eval()
 
-    wandb.init(project=opts.wandb_project_name, config=opts)
+    run = wandb.init(project=opts.wandb_project_name, config=opts)
 
     if torch.cuda.is_available() and opts.multi_gpu:
         img_encoder = nn.DataParallel(img_encoder)
@@ -237,6 +237,10 @@ def train_main_model(opts):
             else:
                 for idx in range(len(model_modules)):
                     torch.save(model_modules[idx].state_dict(), model_file_paths[idx])
+
+            artifact = wandb.Artifact('model', type='model')
+            artifact.add_file(model_file_paths[idx])
+            run.log_artifact(artifact)
                 
     logfile.close()
     val_logfile.close()
