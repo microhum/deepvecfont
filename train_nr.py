@@ -8,6 +8,7 @@ import numpy as np
 from torch.optim import Adam, RMSprop
 from torchvision.utils import save_image
 from tensorboardX import SummaryWriter
+import wandb
 from dataloader import get_loader
 from models.neural_rasterizer import NeuralRasterizer
 from models.vgg_perceptual_loss import VGGPerceptualLoss
@@ -52,6 +53,8 @@ def train_nr_model(opts):
     std = np.load(os.path.join(opts.data_root, opts.mode, 'stdev.npz'))
     mean = torch.from_numpy(mean).to(device).to(torch.float32)
     std = torch.from_numpy(std).to(device).to(torch.float32)
+
+    wandb.init(project=opts.wandb_project_name, config=opts)
 
     for epoch in range(opts.init_epoch, opts.n_epochs):
 
@@ -102,6 +105,10 @@ def train_nr_model(opts):
                 writer.add_scalar('Loss/img_perceptual_loss', opts.cx_loss_w * vggcx_loss['cx_loss'], batches_done)
                 writer.add_image('Images/trg_img', trg_img[0], batches_done)
                 writer.add_image('Images/output_img', output_img[0], batches_done)
+            if opts.wandb:
+                wandb.log({'Loss/loss': loss.item(), 'Loss/img_l1_loss': opts.l1_loss_w * rec_loss.item(), 'Loss/img_perceptual_loss': opts.cx_loss_w * vggcx_loss['cx_loss']}, step=batches_done)
+                wandb.log({"Images/trg_img": [wandb.Image(trg_img[0])]}, step=batches_done)
+                wandb.log({"Images/output_img": [wandb.Image(output_img[0])]}, step=batches_done)
 
             if opts.sample_freq > 0 and batches_done % opts.sample_freq == 0:
                 img_sample = torch.cat((trg_img.data, output_img.data), -2)
@@ -163,8 +170,10 @@ def train_nr_model(opts):
                             break
 
                     if opts.tboard:
-                        writer.add_scalar('VAL/img_l1_loss', val_img_l1_loss, batches_done)
-                        writer.add_scalar('VAL/img_pt_loss', val_img_pt_loss, batches_done)
+                        wandb.log({
+                            'VAL/img_l1_loss': val_img_l1_loss,
+                            'VAL/img_pt_loss': val_img_pt_loss
+                        }, step=batches_done)
 
                     val_msg = (
                         f"Epoch: {epoch}/{opts.n_epochs}, Batch: {idx}/{len(train_loader)}, "

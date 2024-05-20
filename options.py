@@ -33,6 +33,9 @@ def get_parser_main_model():
     parser.add_argument('--eps', type=float, default=1e-8, help='Adam epsilon')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='weight decay')
     parser.add_argument('--tboard', type=bool, default=True, help='whether use tensorboard to visulize loss')
+    parser.add_argument('--wandb', type=bool, default=True, help='whether use wandb to visulize loss')
+    parser.add_argument('--wandb_project_name', type=str, default="DeepVecFontV2", help='wandb project name')
+    
     parser.add_argument('--test_sample_times', type=int, default=20, help='the sample times when testing')
     parser.add_argument('--nr_ckpt_num', type=int, default=1000, 
                         help='the checkpoint id of neural rasterizer when training main model')

@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch.optim import Adam
 from torchvision.utils import save_image
 from tensorboardX import SummaryWriter
+import wandb
 import numpy as np
 from dataloader import get_loader
 from models.image_encoder import ImageEncoder
@@ -59,10 +60,12 @@ def train_main_model(opts):
     neural_rasterizer = NeuralRasterizer(img_size=opts.image_size, feature_dim=opts.seq_feature_dim, hidden_size=opts.hidden_size, num_hidden_layers=opts.num_hidden_layers, 
                                          ff_dropout_p=opts.ff_dropout, rec_dropout_p=opts.rec_dropout, input_nc=2 * opts.hidden_size, 
                                          output_nc=1, ngf=16, bottleneck_bits=opts.bottleneck_bits, norm_layer=nn.LayerNorm, mode='test')
-
+    
     neural_rasterizer_fpath = os.path.join("./experiments/dvf_neural_raster/checkpoints/neural_raster_" + str(opts.nr_ckpt_num) + ".nr.pth")
     neural_rasterizer.load_state_dict(torch.load(neural_rasterizer_fpath))
     neural_rasterizer.eval()
+
+    wandb.init(project=opts.wandb_project_name, config=opts)
 
     if torch.cuda.is_available() and opts.multi_gpu:
         img_encoder = nn.DataParallel(img_encoder)
@@ -142,6 +145,23 @@ def train_main_model(opts):
                     writer.add_image('Images/trgsvg_nr_img', trgsvg_nr_out['gen_imgs'][0], batches_done)
                     writer.add_image('Images/synsvg_nr_img', synsvg_nr_out['gen_imgs'][0], batches_done)
                     writer.add_image('Images/output_img', output_img[0], batches_done)
+                if opts.wandb:
+                    wandb.log({
+                        'Loss/loss': loss.item(),
+                        'Loss/img_l1_loss': img_l1loss.item(),
+                        'Loss/img_kl_loss': opts.kl_beta * kl_loss.item(),
+                        'Loss/img_perceptual_loss': opts.pt_c_loss_w * vggpt_loss['pt_c_loss'],
+                        'Loss/cmd_softmax_loss': softmax_xent_loss.item(),
+                        'Loss/coord_mdn_loss': mdn_loss.item(),
+                        'Loss/synsvg_nr_rec_loss': synsvg_nr_out['rec_loss'].item()
+                    }, step=batches_done)
+
+                    wandb.log({
+                        "Images/trg_img": [wandb.Image(trg_img[0])],
+                        "Images/trgsvg_nr_img": [wandb.Image(trgsvg_nr_out['gen_imgs'][0])],
+                        "Images/synsvg_nr_img": [wandb.Image(synsvg_nr_out['gen_imgs'][0])],
+                        "Images/output_img": [wandb.Image(output_img[0])]
+                    }, step=batches_done)
 
             if opts.sample_freq > 0 and batches_done % opts.sample_freq == 0:
                 
@@ -180,6 +200,15 @@ def train_main_model(opts):
                         writer.add_scalar('VAL/cmd_softmax_loss', val_cmd_softmax_loss, batches_done)
                         writer.add_scalar('VAL/coord_mdn_loss', val_coord_mdn_loss, batches_done)
                         writer.add_scalar('VAL/synsvg_nr_rec_loss', val_synsvg_nr_rec_loss, batches_done)
+                    
+                    if opts.wandb:
+                        wandb.log({
+                            'VAL/img_l1_loss': val_img_l1_loss,
+                            'VAL/img_pt_loss': val_img_pt_loss,
+                            'VAL/cmd_softmax_loss': val_cmd_softmax_loss,
+                            'VAL/coord_mdn_loss': val_coord_mdn_loss,
+                            'VAL/synsvg_nr_rec_loss': val_synsvg_nr_rec_loss
+                        }, step=batches_done)
 
                     val_msg = (
                         f"Epoch: {epoch}/{opts.n_epochs}, Batch: {idx}/{len(train_loader)}, "
