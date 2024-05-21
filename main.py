@@ -260,6 +260,11 @@ def network_forward(data, mean, std, opts, network_moudules):
     # randomly choose reference classes and target classes
     if opts.ref_nshot == 1:
         ref_cls = torch.randint(0, opts.char_categories, (input_image.size(0), opts.ref_nshot)).to(device)
+    # For Few Shot Generation from english letter
+    elif opts.ref_nshot == 52:
+        ref_cls_upper = torch.randint(0, 26, (input_image.size(0), opts.ref_nshot // 2)).to(device)
+        ref_cls_lower = torch.randint(26, 52, (input_image.size(0), opts.ref_nshot // 2)).to(device)
+        ref_cls = torch.cat((ref_cls_upper, ref_cls_lower), -1)
     else:
         ref_cls_upper = torch.randint(0, opts.char_categories // 2, (input_image.size(0), opts.ref_nshot // 2)).to(device) # bs, 1
         ref_cls_lower = torch.randint(opts.char_categories // 2, opts.char_categories, (input_image.size(0), opts.ref_nshot - opts.ref_nshot // 2)).to(device) # bs, 1
@@ -267,6 +272,9 @@ def network_forward(data, mean, std, opts, network_moudules):
     
     # the input reference images 
     trg_cls = torch.randint(0, opts.char_categories, (input_image.size(0), 1)).to(device) # bs, 1
+    if opts.ref_nshot == 52:
+        trg_cls = torch.randint(52, opts.char_categories, (input_image.size(0), 1)).to(device)
+        
     ref_cls_multihot = torch.zeros(input_image.size(0), opts.char_categories).to(device) # bs, 1
     for ref_id in range(0,opts.ref_nshot):
         ref_cls_multihot = torch.logical_or(ref_cls_multihot, util_funcs.trgcls_to_onehot(input_clss, ref_cls[:, ref_id:ref_id+1], opts))

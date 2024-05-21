@@ -186,7 +186,7 @@ def train_nr_model(opts):
                     print(val_msg)
              
 
-        if epoch % opts.ckpt_freq == 0:
+        if epoch % opts.ckpt_freq == 0 and epoch >= 500:
             model_fpath = os.path.join(ckpt_dir, f"{opts.model_name}_{epoch}.nr.pth")
             if torch.cuda.is_available() and opts.multi_gpu:
                 torch.save(neural_rasterizer.module.state_dict(), model_fpath)
