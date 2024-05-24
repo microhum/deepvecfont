@@ -157,11 +157,14 @@ def train_main_model(opts):
                     }, step=batches_done)
 
                     wandb.log({
-                        "Images/trg_img": [wandb.Image(trg_img[0])],
-                        "Images/trgsvg_nr_img": [wandb.Image(trgsvg_nr_out['gen_imgs'][0])],
-                        "Images/synsvg_nr_img": [wandb.Image(synsvg_nr_out['gen_imgs'][0])],
-                        "Images/output_img": [wandb.Image(output_img[0])]
-                    }, step=batches_done)
+                        "Images": wandb.plot.images([
+                            wandb.Image(trg_img[0]),
+                            wandb.Image(trgsvg_nr_out['gen_imgs'][0]),
+                            wandb.Image(synsvg_nr_out['gen_imgs'][0]),
+                            wandb.Image(output_img[0])
+                        ], nrow=4, titles=["Target Image", "Target SVG NR", "Syn SVG NR", "Output Image"]),
+                        "step": batches_done
+                    })
 
             if opts.sample_freq > 0 and batches_done % opts.sample_freq == 0:
                 
@@ -221,7 +224,7 @@ def train_main_model(opts):
                     val_logfile.write(val_msg + "\n")
                     print(val_msg)
              
-        if epoch % opts.ckpt_freq == 0:
+        if epoch % opts.ckpt_freq == 0 and epoch >= 50:
             model_modules = [img_encoder, img_decoder, svg_encoder, svg_decoder, modality_fusion, mdn_top_layer]
             model_file_paths = []
             model_file_paths.append(os.path.join(ckpt_dir, f"{opts.model_name}_{epoch}.imgenc.pth"))
@@ -238,8 +241,8 @@ def train_main_model(opts):
                 for idx in range(len(model_modules)):
                     torch.save(model_modules[idx].state_dict(), model_file_paths[idx])
 
-            artifact = wandb.Artifact('model', type='model')
-            artifact.add_file(model_file_paths[idx])
+            artifact = wandb.Artifact('model_main_checkpoints', type='model')
+            artifact.add_dir(ckpt_dir)
             run.log_artifact(artifact)
                 
     logfile.close()

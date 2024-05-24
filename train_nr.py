@@ -108,8 +108,13 @@ def train_nr_model(opts):
                 writer.add_image('Images/output_img', output_img[0], batches_done)
             if opts.wandb:
                 wandb.log({'Loss/loss': loss.item(), 'Loss/img_l1_loss': opts.l1_loss_w * rec_loss.item(), 'Loss/img_perceptual_loss': opts.cx_loss_w * vggcx_loss['cx_loss']}, step=batches_done)
-                wandb.log({"Images/trg_img": [wandb.Image(trg_img[0])]}, step=batches_done)
-                wandb.log({"Images/output_img": [wandb.Image(output_img[0])]}, step=batches_done)
+                wandb.log({
+                    "Images": wandb.plot.images([
+                        wandb.Image(trg_img[0]),
+                        wandb.Image(output_img[0])
+                    ], nrow=2, titles=["Target Image", "Output Image"]),
+                    "step": batches_done
+                })
 
             if opts.sample_freq > 0 and batches_done % opts.sample_freq == 0:
                 img_sample = torch.cat((trg_img.data, output_img.data), -2)
@@ -193,7 +198,7 @@ def train_nr_model(opts):
             else:
                 torch.save(neural_rasterizer.state_dict(), model_fpath)
 
-            artifact = wandb.Artifact('model', type='model')
+            artifact = wandb.Artifact('model_nr', type='model')
             artifact.add_file(model_fpath)
             run.log_artifact(artifact)
 
