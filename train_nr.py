@@ -109,12 +109,9 @@ def train_nr_model(opts):
             if opts.wandb:
                 wandb.log({'Loss/loss': loss.item(), 'Loss/img_l1_loss': opts.l1_loss_w * rec_loss.item(), 'Loss/img_perceptual_loss': opts.cx_loss_w * vggcx_loss['cx_loss']}, step=batches_done)
                 wandb.log({
-                    "Images": wandb.plot.images([
-                        wandb.Image(trg_img[0]),
-                        wandb.Image(output_img[0])
-                    ], nrow=2, titles=["Target Image", "Output Image"]),
-                    "step": batches_done
-                })
+                    'Image/trg_img': wandb.Image(trg_img[0], caption="Target"),
+                    'Image/output_img': wandb.Image(output_img[0], caption="Output")
+                }, step=batches_done)
 
             if opts.sample_freq > 0 and batches_done % opts.sample_freq == 0:
                 img_sample = torch.cat((trg_img.data, output_img.data), -2)

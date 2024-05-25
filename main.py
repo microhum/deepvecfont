@@ -157,14 +157,11 @@ def train_main_model(opts):
                     }, step=batches_done)
 
                     wandb.log({
-                        "Images": wandb.plot.images([
-                            wandb.Image(trg_img[0]),
-                            wandb.Image(trgsvg_nr_out['gen_imgs'][0]),
-                            wandb.Image(synsvg_nr_out['gen_imgs'][0]),
-                            wandb.Image(output_img[0])
-                        ], nrow=4, titles=["Target Image", "Target SVG NR", "Syn SVG NR", "Output Image"]),
-                        "step": batches_done
-                    })
+                            'Image/trg_img': wandb.Image(trg_img[0], caption="Target Image"),
+                            'Image/trgsvg_nr_out': wandb.Image(trgsvg_nr_out['gen_imgs'][0], "Target SVG NR"),
+                            'Image/synsvg_nr_out': wandb.Image(synsvg_nr_out['gen_imgs'][0], "Syn SVG NR"),
+                            'Image/output_img': wandb.Image(output_img[0], "Output Image")
+                        }, step=batches_done )
 
             if opts.sample_freq > 0 and batches_done % opts.sample_freq == 0:
                 
