@@ -188,16 +188,16 @@ def train_nr_model(opts):
                     print(val_msg)
              
 
-        if epoch % opts.ckpt_freq == 0 and epoch >= 300:
+        if epoch % opts.ckpt_freq == 0:
             model_fpath = os.path.join(ckpt_dir, f"{opts.model_name}_{epoch}.nr.pth")
             if torch.cuda.is_available() and opts.multi_gpu:
                 torch.save(neural_rasterizer.module.state_dict(), model_fpath)
             else:
                 torch.save(neural_rasterizer.state_dict(), model_fpath)
-
-            artifact = wandb.Artifact('model_nr', type='model')
-            artifact.add_file(model_fpath)
-            run.log_artifact(artifact)
+            if epoch >= 300:
+                artifact = wandb.Artifact('model_nr', type='model')
+                artifact.add_file(model_fpath)
+                run.log_artifact(artifact)
 
                 
     logfile.close()
