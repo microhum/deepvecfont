@@ -242,7 +242,7 @@ def create_dataset(opt):
         >>> dataset = create_dataset(opt)
     """
     dataset_train = get_loader(opt.dataroot, opt.char_categories, opt.batch_size, opt.read_mode, opt.img_lr, opt.img_hr, 'train')
-    dataset_test = get_loader(opt.dataroot, opt.char_categories, opt.batch_size, opt.read_mode, opt.img_lr, opt.img_hr, 'test')
+    dataset_test = get_loader(opt.dataroot, opt.char_categories, opt.batch_size, opt.read_mode, opt.img_lr, opt.img_hr, 'val')
     return dataset_train, dataset_test
 
 

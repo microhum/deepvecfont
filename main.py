@@ -32,7 +32,7 @@ def train_main_model(opts):
     val_logfile = open(os.path.join(log_dir, "val_loss_log.txt"), 'w')
 
     train_loader = get_loader(opts.data_root, opts.image_size, opts.char_categories, opts.max_seq_len, opts.seq_feature_dim, opts.batch_size, opts.read_mode, opts.mode)
-    val_loader = get_loader(opts.data_root, opts.image_size, opts.char_categories, opts.max_seq_len, opts.seq_feature_dim, opts.batch_size, opts.read_mode, 'test')
+    val_loader = get_loader(opts.data_root, opts.image_size, opts.char_categories, opts.max_seq_len, opts.seq_feature_dim, opts.batch_size, opts.read_mode, 'val')
 
     img_encoder = ImageEncoder(img_size=opts.image_size, input_nc=opts.char_categories, output_nc=1, ngf=16, norm_layer=nn.LayerNorm)
 
@@ -158,8 +158,8 @@ def train_main_model(opts):
 
                     wandb.log({
                             'Image/trg_img': wandb.Image(trg_img[0], caption="Target Image"),
-                            'Image/trgsvg_nr_out': wandb.Image(trgsvg_nr_out['gen_imgs'][0], "Target SVG NR"),
-                            'Image/synsvg_nr_out': wandb.Image(synsvg_nr_out['gen_imgs'][0], "Syn SVG NR"),
+                            'Image/trgsvg_nr_out': wandb.Image(trgsvg_nr_out['gen_imgs'][0], caption = "Target SVG NR"),
+                            'Image/synsvg_nr_out': wandb.Image(synsvg_nr_out['gen_imgs'][0], caption = "Syn SVG NR"),
                             'Image/output_img': wandb.Image(output_img[0], "Output Image")
                         }, step=batches_done )
 
@@ -266,9 +266,7 @@ def network_forward(data, mean, std, opts, network_moudules):
         ref_cls_lower = torch.randint(26, 52, (input_image.size(0), opts.ref_nshot // 2)).to(device)
         ref_cls = torch.cat((ref_cls_upper, ref_cls_lower), -1)
     else:
-        ref_cls_upper = torch.randint(0, opts.char_categories // 2, (input_image.size(0), opts.ref_nshot // 2)).to(device) # bs, 1
-        ref_cls_lower = torch.randint(opts.char_categories // 2, opts.char_categories, (input_image.size(0), opts.ref_nshot - opts.ref_nshot // 2)).to(device) # bs, 1
-        ref_cls = torch.cat((ref_cls_upper, ref_cls_lower), -1)
+        ref_cls = torch.randint(0, opts.char_categories, (input_image.size(0), opts.ref_nshot)).to(device) # For TH to TH
     
     # the input reference images 
     trg_cls = torch.randint(0, opts.char_categories, (input_image.size(0), 1)).to(device) # bs, 1
